@@ -1,46 +1,47 @@
 ## $Id$
 # Maintainer: Chupligin Sergey (NeoChapay) <neochapay@gmail.com>
 
-pkgname=ohm-plugins-misc
-pkgver=1.8.0.r0.gda11b4b
-pkgrel=1
-pkgdesc="A miscallaneous set of OHM plugins"
+pkgname=ohm-plugin-ruleengine
+pkgver=1.1.14
+pkgrel=5
+pkgdesc="A prolog-based OHM rule engine plugin"
 arch=('x86_64' 'aarch64')
-url="https://github.com/sailfishos/ohm-plugins-misc"
+url="https://github.com/sailfishos/ohm-rule-engine"
 license=('LGPL-2.1-only')
-depends=('glib2' 'ohm' 'libdres-ohm' 'meego-resource-git')
-makedepends=('git' 'automake' 'autoconf')
-source=("${pkgname}::git+${url}")
-sha256sums=('SKIP')
+depends=('glib2'
+    'ohm'
+    'ohm-plugins-misc'
+    'swi-prolog7'
+    'libprolog'
+    'policy-settings-common')
 
-pkgver() {
-  cd "${srcdir}/${pkgname}"
-  ( set -o pipefail
-    git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g' ||
-    printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
-  ) 2>/dev/null
-}
+makedepends=('automake' 'autoconf')
+source=("${url}/archive/refs/tags/$pkgver.tar.gz")
+sha256sums=('3b4e2ffbe308323e62ac09b3b6407298c028f32b710d3e6cdd26491dee43193c')
 
 prepare() {
-    cd "${srcdir}/${pkgname}"
+    cd ohm-rule-engine-$pkgver
+    echo -n "${pkgver}" > .tarball-version
     ./autogen.sh
 }
 
 build() {
-  cd "${srcdir}/${pkgname}"
+  cd ohm-rule-engine-$pkgver
   ./configure --prefix=/usr \
     --sysconfdir=/etc \
     --sbindir=/usr/bin \
-    --disable-static \
-    --enable-telephony \
-    --disable-notification \
-    --disable-videoep \
-    --disable-fmradio
+    --disable-static
   make
 }
 
 package() {
-  cd "${srcdir}/${pkgname}"
+  cd ohm-rule-engine-$pkgver
   make DESTDIR="${pkgdir}" install
-  sed -i 's/pre-user-session.target/graphical-session-pre.target/' "${pkgdir}/usr/lib/systemd/user/ohm-session-agent.service"
+#library is hardcoded
+  cd ${pkgdir}/usr/lib
+  ln -s /usr/lib/swipl/lib/`uname -m`-linux/libswipl.so.8
+#use basic rulse
+  mkdir -p ${pkgdir}/usr/share/policy/rules/
+  cd ${pkgdir}/usr/share/policy/rules/
+  ln -s basic current
 }
