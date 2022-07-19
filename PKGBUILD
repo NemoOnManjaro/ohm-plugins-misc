@@ -1,47 +1,39 @@
 ## $Id$
 # Maintainer: Chupligin Sergey (NeoChapay) <neochapay@gmail.com>
 
-pkgname=ohm-plugin-ruleengine
-pkgver=1.1.14
-pkgrel=5
-pkgdesc="A prolog-based OHM rule engine plugin"
+pkgname=ohm-plugins-misc
+pkgver=1.9.1
+pkgrel=1
+pkgdesc="A miscallaneous set of OHM plugins"
 arch=('x86_64' 'aarch64')
-url="https://github.com/sailfishos/ohm-rule-engine"
+url="https://github.com/sailfishos/ohm-plugins-misc"
 license=('LGPL-2.1-only')
-depends=('glib2'
-    'ohm'
-    'ohm-plugins-misc'
-    'swi-prolog7'
-    'libprolog'
-    'policy-settings-common')
-
+depends=('glib2' 'ohm' 'libdres-ohm' 'libresource')
 makedepends=('automake' 'autoconf')
 source=("${url}/archive/refs/tags/$pkgver.tar.gz")
-sha256sums=('3b4e2ffbe308323e62ac09b3b6407298c028f32b710d3e6cdd26491dee43193c')
+sha256sums=('b1e19d95e620b7675d73bb964d878d552c80be33e0dd83b1118078dbda1ddd37')
 
 prepare() {
-    cd ohm-rule-engine-$pkgver
-    echo -n "${pkgver}" > .tarball-version
+    cd $pkgname-$pkgver
+    echo "$pkgver" > .tarball-version
     ./autogen.sh
 }
 
 build() {
-  cd ohm-rule-engine-$pkgver
+  cd $pkgname-$pkgver
   ./configure --prefix=/usr \
     --sysconfdir=/etc \
     --sbindir=/usr/bin \
-    --disable-static
+    --disable-static \
+    --enable-telephony \
+    --disable-notification \
+    --disable-videoep \
+    --disable-fmradio
   make
 }
 
 package() {
-  cd ohm-rule-engine-$pkgver
+  cd $pkgname-$pkgver
   make DESTDIR="${pkgdir}" install
-#library is hardcoded
-  cd ${pkgdir}/usr/lib
-  ln -s /usr/lib/swipl/lib/`uname -m`-linux/libswipl.so.8
-#use basic rulse
-  mkdir -p ${pkgdir}/usr/share/policy/rules/
-  cd ${pkgdir}/usr/share/policy/rules/
-  ln -s basic current
+  sed -i 's/pre-user-session.target/graphical-session-pre.target/' "${pkgdir}/usr/lib/systemd/user/ohm-session-agent.service"
 }
