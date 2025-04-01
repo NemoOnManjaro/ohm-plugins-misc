@@ -29,7 +29,7 @@ build() {
     --disable-notification \
     --disable-videoep \
     --disable-fmradio
-  make
+  make -j1
 }
 
 package() {
